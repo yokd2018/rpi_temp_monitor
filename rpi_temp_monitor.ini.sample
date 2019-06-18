@@ -1,0 +1,15 @@
+[dirs]
+basedir = <install directory>
+log_dir = <directory to save logs>
+
+[google_drive]
+settings_file = <absolute path to setting.yaml>
+gd_csv_folder = <google drive folder id to save csv file>
+gd_image_folder = <google drive folder id to save png file>
+
+[twitter_creds]
+oauth_consumer_key = <twitter consumer key>
+oauth_token = <twitter token>
+oauth_consumer_secret = <twitter consumer secret>
+oauth_token_secret = <twitter token secret>
+
