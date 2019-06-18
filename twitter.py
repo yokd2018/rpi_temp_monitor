@@ -162,15 +162,6 @@ def get_mention_tl(since_id):
     c = MyTwitterClient(**task)
     return c.issue()
 
-def print_timeline(data):
-    for i in data:
-        user = i['user']['name'].encode('utf-8')
-        tweet = i['text'].encode('utf-8')
-        twid = i['id_str']
-        print "========%s:%s========" % (user, twid)
-        print tweet
-        print ''
-
 def post_greeting(tweet):
     greetings_file = os.path.join(basedir, "greetings.yaml")
     with open(greetings_file, "r") as f:

@@ -5,7 +5,12 @@ import sampling as s
 import os
 import stat
 from datetime import datetime as dt
-import configuration as CONF
+import ConfigParser
+
+inifile = ConfigParser.SafeConfigParser()
+inifile.read("rpi_temp_monitor.ini")
+
+log_dir = inifile.get("dirs", "log_dir")
 
 class test_sampling(unittest.TestCase):
     def test_save_load_pkl(self):
@@ -26,7 +31,7 @@ class test_sampling(unittest.TestCase):
         self.assertIsInstance(d, float)
 
     def test_write_data(self):
-        test_out = os.path.join(CONF.log_dir,'test.log')
+        test_out = os.path.join(log_dir,'test.log')
         if os.path.exists(test_out):
             os.remove(test_out)
         saved_data = dt.now().strftime('%Y-%m-%d %H:%M:%S')

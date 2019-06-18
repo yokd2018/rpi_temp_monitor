@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# coding: utf-8
 
 import sys
 import pickle
@@ -6,23 +7,20 @@ import datetime
 import subprocess
 import os
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO
-import configuration as CONF
+import ConfigParser
 
-pklfile = CONF.pklfile
+inifile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rpi_temp_monitor.ini")
+inifile = ConfigParser.SafeConfigParser()
+inifile.read(inifile_path)
+
+basedir = inifile.get("dirs", "basedir")
+log_dir = inifile.get("dirs", "log_dir")
+
+pklfile = os.path.join(basedir, 'data.pkl')
 sys_thermal_file = '/sys/class/thermal/thermal_zone0/temp'
 smart_cmd = 'smartctl -A /dev/sda'
 dt_fmt_time = '%Y-%m-%d %H:%M:%S'
-log_level=INFO
-log_formatter = Formatter('%(asctime)s %(levelno)s %(funcName)s:%(lineno)d %(message)s')
-aggregate_repeat=5
-
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(log_level)
-handler.setFormatter(log_formatter)
-logger.setLevel(log_level)
-logger.addHandler(handler)
-logger.propagate = False
+aggregate_repeat=10
 
 def save_pkl(data):
     with open(pklfile, 'wb') as f:
@@ -34,7 +32,6 @@ def load_pkl():
             data = pickle.load(f)
 
     except:
-        logger.warn('pickle file not found')
         data = []
 
     return data
@@ -84,9 +81,8 @@ def data_aggregation(data, key):
 
     return ','.join(str(i) for i in [_dt, _avg, _h, _l])
 
-if __name__ == '__main__':
+def get_current_temperature():
 
-    data = load_pkl()
     now = datetime.datetime.now()
     sample = SampleData(now)
 
@@ -96,21 +92,25 @@ if __name__ == '__main__':
     disk_temp = get_disk_temp()
     sample.add_data('disk',  disk_temp)
 
+    return sample
+
+def main():
+
+    data = load_pkl()
+    sample = get_current_temperature()
+
     data.append(sample)
     save_pkl(data)
-
-    logger.debug('appended sample: %s, %s, %s', 
-                   sample.get_time_str(), cpu_temp, disk_temp)
 
     if len(data) >= aggregate_repeat:
         for key in 'cpu', 'disk':
             agg_text = data_aggregation(data, key)
             d = agg_text.split()[0]
-            out_file = os.path.join(CONF.log_dir,
-                           '-'.join(['temperature', key, d]))
+            out_file = os.path.join(log_dir, "temperature-%s-%s.csv" % (key, d))
             write_data(out_file, agg_text)
-            logger.debug('aggregate: %s', agg_text)
         data = []
         save_pkl(data)
 
+if __name__ == '__main__':
+    main()
 
