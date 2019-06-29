@@ -42,10 +42,15 @@ googledriveを使うための設定ファイル
 
 https://pythonhosted.org/PyDrive/oauth.html
 
-## greetings.yaml
+## words.yaml
 
-twitterでmentionがあり、特にキーワードがなかったときに返すデフォルトの応答集。
-リストで入れておくこと。
+twitterでやり取りするメッセージ集。
+以下のようなセクションで構成。
+
+- greeting: twitterでmentionがあり、特にキーワードがなかった場合に、このリストから一つ応答を返す。
+- temperature: ユーザがこのリストに含まれている言葉でmentionしてきた場合、温度情報を返す
+- shutdown: ユーザがこのリストに含まれている言葉でmentionしてきた場合、シャットダウンする
+- reboot: ユーザがこのリストに含まれている言葉でmentionしてきた場合、再起動する
 
 ## crontab
 

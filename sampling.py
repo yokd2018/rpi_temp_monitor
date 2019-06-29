@@ -18,7 +18,7 @@ log_dir = inifile.get("dirs", "log_dir")
 
 pklfile = os.path.join(basedir, 'data.pkl')
 sys_thermal_file = '/sys/class/thermal/thermal_zone0/temp'
-smart_cmd = 'smartctl -A /dev/sda'
+smart_cmd = 'smartctl -A %s' % inifile.get("monitor", "smart_disk")
 dt_fmt_time = '%Y-%m-%d %H:%M:%S'
 aggregate_repeat=10
 

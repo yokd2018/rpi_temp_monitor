@@ -15,6 +15,7 @@ import ConfigParser
 import yaml
 import random
 import os
+import subprocess
 import pickle
 from datetime import datetime as dt
 from sampling import get_current_temperature
@@ -27,6 +28,7 @@ inifile.read(inifile_path)
 creds = dict(inifile.items("twitter_creds"))
 basedir = inifile.get("dirs", "basedir")
 pklfile = os.path.join(basedir, 'twitter_id.pkl')
+wordsfile = os.path.join(basedir, "words.yaml")
 
 dt_fmt_date = '%Y-%m-%d'
 
@@ -129,11 +131,49 @@ def load_pkl():
     return data
 
 def tweet_response(tweet):
-    if "温度" in tweet['text'].encode('utf-8'):
+    msg = tweet['text'].encode('utf-8')
+    if check_words(msg, "temperature"):
         post_temperature(tweet)
+    elif check_words(msg, "shutdown"):
+        cmd = 'shutdown -h 1'
+        execute_command(tweet, cmd)
+    elif check_words(msg, "reboot"):
+        cmd = 'shutdown -r 1'
+        execute_command(tweet, cmd)
     else:
         post_greeting(tweet)
 
+def check_words(msg, key):
+    with open(wordsfile, "r") as f:
+        data = yaml.load(f)
+    kwds = data[key]
+    for k in kwds:
+        if k.encode('utf-8') in msg:
+            return True
+    return False
+
+def execute_command(tweet, cmd):
+    p = subprocess.Popen(cmd, shell=True, \
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err= p.communicate()
+    msg = 'コマンドを実行しました。\n%s\n%s' % (out,err)
+    post_reply(tweet, msg)
+ 
+def post_reply(tweet, msg, media_ids=None):
+    referer = tweet['user']['screen_name'].encode('utf-8')
+    msg = "@%s %s" % (referer, msg)
+    task = {
+        'method': 'post',
+        'url': "https://api.twitter.com/1.1/statuses/update.json",
+        'params': {
+            "status": msg,
+            "in_reply_to_status_id": tweet['id_str']
+        }
+    }
+    if media_ids:
+        task['params']['media_ids'] = media_ids
+    c = MyTwitterClient(**task)
+    return c.issue()
 
 def main():
     since_id = load_pkl()
@@ -163,22 +203,10 @@ def get_mention_tl(since_id):
     return c.issue()
 
 def post_greeting(tweet):
-    greetings_file = os.path.join(basedir, "greetings.yaml")
-    with open(greetings_file, "r") as f:
+    with open(wordsfile, "r") as f:
         data = yaml.load(f)
-    referer = tweet['user']['screen_name'].encode('utf-8')
-    msg= "@%s %s" % (referer, data[random.randint(0, len(data)-1)].encode('utf-8'))
-    print msg
-    task = {
-        'method': 'post',
-        'url': "https://api.twitter.com/1.1/statuses/update.json",
-        'params': {
-            "status": msg,
-            "in_reply_to_status_id": tweet['id_str']
-        }
-    }
-    c = MyTwitterClient(**task)
-    return c.issue()
+    msg = data['greetings'][random.randint(0, len(data)-1)].encode('utf-8')
+    post_reply(tweet, msg)
 
 def post_temperature(tweet):
 
@@ -196,23 +224,10 @@ def post_temperature(tweet):
         media_ids.append(data["media_id_string"])
 
     s = get_current_temperature()
-    referer = tweet['user']['screen_name'].encode('utf-8')
-    msg = "@%s %s現在の温度は、cpu: %s度, disk: %s度です！" % \
-          (tweet['user']['screen_name'].encode('utf-8'), \
-           now.strftime('%H時%M分%S秒'), s.data['cpu'], s.data['disk'])
+    msg = "%s現在の温度は、cpu: %s度, disk: %s度です！" % \
+           (now.strftime('%H時%M分%S秒'), s.data['cpu'], s.data['disk'])
 
-    task = {
-        'method': 'post',
-        'url': "https://api.twitter.com/1.1/statuses/update.json",
-        'params': {
-            "status": msg,
-            "media_ids": ','.join(media_ids),
-            "in_reply_to_status_id": tweet['id_str']
-        }
-    }
-
-    c = MyTwitterClient(**task)
-    return c.issue()
+    post_reply(tweet, msg, ','.join(media_ids))
 
 def post_tweet_media(imgpath):
     task = {

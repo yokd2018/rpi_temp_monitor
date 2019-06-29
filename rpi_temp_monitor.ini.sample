@@ -2,6 +2,9 @@
 basedir = <install directory>
 log_dir = <directory to save logs>
 
+[monitor]
+smart_disk = <disk>
+
 [google_drive]
 settings_file = <absolute path to setting.yaml>
 gd_csv_folder = <google drive folder id to save csv file>

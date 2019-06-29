@@ -1,0 +1,14 @@
+greetings:
+    - こんにちは
+    - ハイ
+    - ハーイ
+    - はい!
+temperature:
+    - 温度
+shutdown:
+    - シャットダウン
+    - shutdown
+reboot:
+    - 再起動
+    - リブート
+    - reboot
